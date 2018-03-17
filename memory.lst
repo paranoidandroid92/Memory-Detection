@@ -1,0 +1,10 @@
+     1                                  [BITS 16]
+     2 00000000 B8C007                  mov ax,0x07c0
+     3 00000003 8ED8                    mov ds,ax
+     4                                  
+     5                                  end:
+     6 00000005 EBFE                    	jmp end
+     7                                  				
+     8 00000007 00<rept>                times 510-($-$$) db 0x00
+     9 000001FE 55                      db 0x55
+    10 000001FF AA                      db 0xAA
