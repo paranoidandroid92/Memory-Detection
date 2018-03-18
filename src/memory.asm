@@ -10,24 +10,22 @@ mov ax,0x6000
 mov ss,ax
 mov sp,0
 
+call detect_memory
+call print_memory_map
+mov ax,bar_string;
+mov si,ax;
+call printStr;
+mov bl,[entry_count]
 
 
-
-
-
-	call detect_memory
-	call print_memory_map
-	mov ax,bar_string;
-	mov si,ax;
-	call printStr;
-	mov bl,[entry_count]
 end:
 	hlt
 	jmp end
 
+
 detect_memory:
 	pushad
-	mov ebx,0	;clear ebx
+	mov ebx,0			;clear ebx
 	mov edx,0x534D4150	;magic number
 detect_entry:
 	mov eax,0xE820
@@ -41,6 +39,7 @@ detect_entry:
 detect_end:
 	popad
 	ret
+
 
 print_memory_map:
 	pusha
@@ -73,12 +72,11 @@ next_variable:
 	mov ax,0x4e2D
 	push di
 	push es
-	add word [screen_index],2
+	sub word [screen_index],2
 	mov bx,0xb800
 	mov es,bx
 	mov di,[screen_index]
 	mov [es:di],ax
-	sub word [screen_index],4
 	pop es
 	pop di
 	jmp repeat
@@ -92,13 +90,12 @@ over:
 	ret
 	
 
-
-
 print_byte: ;print al
 	pushad
 	push es
 	mov bx,0xb800
 	mov es,bx
+	sub word [screen_index],4
 	mov di,[screen_index]
 	mov bl,al
 	and al,0x0F
@@ -113,12 +110,12 @@ print_byte: ;print al
 	mov cl,al
 	mov eax,ecx
 print:
-	sub word [screen_index],4
 	mov [es:di],eax
 print_end:
 	pop es
 	popad
 	ret
+
 
 add_ascii_offset:
 	cmp al,9
@@ -129,6 +126,7 @@ numeric:
 letter:
 	add al,55
 	ret
+
 
 ;prints string in [ds:si] to screen	
 printStr:
@@ -173,7 +171,7 @@ printStrFinish:
 video_memory_base dw 0xb800
 video_memory_index dw 0x0000
 entry_count db 0x00
-screen_index dw 256
+screen_index dw 260
 bar_string db '      Type            Length            Base      ', 0x00
 times 510-($-$$) db 0x00
 db 0x55

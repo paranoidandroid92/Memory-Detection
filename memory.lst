@@ -10,176 +10,171 @@
     10 00000010 8ED0                    mov ss,ax
     11 00000012 BC0000                  mov sp,0
     12                                  
-    13                                  
-    14                                  
-    15                                  
-    16                                  
-    17                                  
-    18 00000015 E81200                  	call detect_memory
-    19 00000018 E83E00                  	call print_memory_map
-    20 0000001B B8[4501]                	mov ax,bar_string;
-    21 0000001E 89C6                    	mov si,ax;
-    22 00000020 E8DA00                  	call printStr;
-    23 00000023 8A1E[4201]              	mov bl,[entry_count]
-    24                                  end:
-    25 00000027 F4                      	hlt
-    26 00000028 EBFD                    	jmp end
-    27                                  
-    28                                  detect_memory:
-    29 0000002A 6660                    	pushad
-    30 0000002C 66BB00000000            	mov ebx,0	;clear ebx
-    31 00000032 66BA50414D53            	mov edx,0x534D4150	;magic number
-    32                                  detect_entry:
-    33 00000038 66B820E80000            	mov eax,0xE820
-    34 0000003E 66B918000000            	mov ecx,24
-    35 00000044 CD15                    	int 0x15
-    36 00000046 8006[4201]01            	add byte [entry_count],1
-    37 0000004B 6683FB00                	cmp ebx,0
-    38 0000004F 7405                    	je detect_end
-    39 00000051 83C718                  	add di,24
-    40 00000054 EBE2                    	jmp detect_entry
-    41                                  detect_end:
-    42 00000056 6661                    	popad
-    43 00000058 C3                      	ret
-    44                                  
-    45                                  print_memory_map:
-    46 00000059 60                      	pusha
-    47 0000005A 06                      	push es
-    48 0000005B A1[4201]                	mov ax,[entry_count]
-    49 0000005E B118                    	mov cl,24
-    50 00000060 F6E1                    	mul cl
-    51 00000062 89C1                    	mov cx,ax
-    52 00000064 B80050                  	mov ax,0x5000
-    53 00000067 8EC0                    	mov es,ax
-    54 00000069 BF0000                  	mov di,0
-    55 0000006C BE0000                  	mov si,0
-    56                                  repeat:
-    57 0000006F 83F900                  	cmp cx,0
-    58 00000072 7445                    	je over
-    59 00000074 268A05                  	mov al,[es:di]
-    60 00000077 E84200                  	call print_byte
-    61 0000007A 49                      	dec cx
-    62 0000007B 47                      	inc di
-    63 0000007C 89F8                    	mov ax,di
-    64 0000007E B208                    	mov dl,8
-    65 00000080 F6F2                    	div dl
-    66 00000082 80FC00                  	cmp ah,0
-    67 00000085 7402                    	je next_variable
-    68 00000087 EBE6                    	jmp repeat
-    69                                  next_variable:
-    70 00000089 46                      	inc si
-    71 0000008A 83FE03                  	cmp si,3
-    72 0000008D 741F                    	je next_entry
-    73 0000008F B82D4E                  	mov ax,0x4e2D
-    74 00000092 57                      	push di
-    75 00000093 06                      	push es
-    76 00000094 8306[4301]02            	add word [screen_index],2
-    77 00000099 BB00B8                  	mov bx,0xb800
-    78 0000009C 8EC3                    	mov es,bx
-    79 0000009E 8B3E[4301]              	mov di,[screen_index]
-    80 000000A2 268905                  	mov [es:di],ax
-    81 000000A5 832E[4301]04            	sub word [screen_index],4
-    82 000000AA 07                      	pop es
-    83 000000AB 5F                      	pop di
-    84 000000AC EBC1                    	jmp repeat
-    85                                  next_entry:
-    86 000000AE BE0000                  	mov si,0
-    87 000000B1 8106[4301]0401          	add word [screen_index],260
-    88 000000B7 EBB6                    	jmp repeat
-    89                                  over:
-    90 000000B9 07                      	pop es
-    91 000000BA 61                      	popa
-    92 000000BB C3                      	ret
-    93                                  	
-    94                                  
-    95                                  
-    96                                  
-    97                                  print_byte: ;print al
-    98 000000BC 6660                    	pushad
-    99 000000BE 06                      	push es
-   100 000000BF BB00B8                  	mov bx,0xb800
-   101 000000C2 8EC3                    	mov es,bx
-   102 000000C4 8B3E[4301]              	mov di,[screen_index]
-   103 000000C8 88C3                    	mov bl,al
-   104 000000CA 240F                    	and al,0x0F
-   105 000000CC E82400                  	call add_ascii_offset
-   106 000000CF B54E                    	mov ch,0x4e
-   107 000000D1 88C1                    	mov cl,al
-   108 000000D3 66C1E110                	shl ecx,16
-   109 000000D7 88D8                    	mov al,bl
-   110 000000D9 C0E804                  	shr al,4
-   111 000000DC E81400                  	call add_ascii_offset
-   112 000000DF B54E                    	mov ch,0x4e
-   113 000000E1 88C1                    	mov cl,al
-   114 000000E3 6689C8                  	mov eax,ecx
-   115                                  print:
-   116 000000E6 832E[4301]04            	sub word [screen_index],4
-   117 000000EB 26668905                	mov [es:di],eax
-   118                                  print_end:
-   119 000000EF 07                      	pop es
-   120 000000F0 6661                    	popad
-   121 000000F2 C3                      	ret
-   122                                  
-   123                                  add_ascii_offset:
-   124 000000F3 3C09                    	cmp al,9
-   125 000000F5 7F03                    	jg letter
-   126                                  numeric:
-   127 000000F7 0430                    	add al,48
-   128 000000F9 C3                      	ret
-   129                                  letter:
-   130 000000FA 0437                    	add al,55
-   131 000000FC C3                      	ret
-   132                                  
-   133                                  ;prints string in [ds:si] to screen	
-   134                                  printStr:
-   135 000000FD 60                      	pusha;
-   136 000000FE 57                      	push di
-   137 000000FF 06                      	push es
-   138 00000100 FC                      	cld;inc si after lodsb
-   139                                  loadchr:
-   140 00000101 AC                      	lodsb;
-   141 00000102 3C00                    	cmp al,0x00;
-   142 00000104 7434                    	je printStrFinish;
-   143 00000106 3C0A                    	cmp al,0x0A;
-   144 00000108 7415                    	je newline;
-   145 0000010A B44E                    	mov ah,0x4e;
-   146 0000010C 8B3E[4001]              	mov di,[video_memory_index];
-   147 00000110 8E06[3E01]              	mov es,[video_memory_base];
-   148 00000114 268905                  	mov [es:di],ax;
-   149 00000117 47                      	inc di;
-   150 00000118 47                      	inc di;
-   151 00000119 893E[4001]              	mov [video_memory_index],di;
-   152 0000011D EBE2                    	jmp loadchr;
-   153                                  newline:
-   154 0000011F 52                      	push dx;
-   155 00000120 53                      	push bx;
-   156 00000121 50                      	push ax;
-   157 00000122 BBA000                  	mov bx,0x00A0;
-   158 00000125 011E[4001]              	add [video_memory_index],bx;
-   159 00000129 BA0000                  	mov dx,0;
-   160 0000012C A1[4001]                	mov ax,[video_memory_index];
-   161 0000012F F7F3                    	div bx;
-   162 00000131 2916[4001]              	sub [video_memory_index],dx;
-   163 00000135 58                      	pop ax;
-   164 00000136 5B                      	pop bx;
-   165 00000137 5A                      	pop dx;
-   166 00000138 EBC7                    	jmp loadchr;
-   167                                  printStrFinish:
-   168 0000013A 07                      	pop es
-   169 0000013B 5F                      	pop di
-   170 0000013C 61                      	popa;
-   171 0000013D C3                      	ret;
-   172                                  
-   173 0000013E 00B8                    video_memory_base dw 0xb800
-   174 00000140 0000                    video_memory_index dw 0x0000
-   175 00000142 00                      entry_count db 0x00
-   176 00000143 0001                    screen_index dw 256
-   177 00000145 202020202020547970-     bar_string db '      Type            Length            Base      ', 0x00
-   178 0000014E 652020202020202020-
-   179 00000157 202020204C656E6774-
-   180 00000160 682020202020202020-
-   181 00000169 202020204261736520-
-   182 00000172 202020202000       
-   183 00000178 00<rept>                times 510-($-$$) db 0x00
-   184 000001FE 55                      db 0x55
-   185 000001FF AA                      db 0xAA
+    13 00000015 E81200                  call detect_memory
+    14 00000018 E83E00                  call print_memory_map
+    15 0000001B B8[4001]                mov ax,bar_string;
+    16 0000001E 89C6                    mov si,ax;
+    17 00000020 E8D500                  call printStr;
+    18 00000023 8A1E[3D01]              mov bl,[entry_count]
+    19                                  
+    20                                  end:
+    21 00000027 F4                      	hlt
+    22 00000028 EBFD                    	jmp end
+    23                                  
+    24                                  detect_memory:
+    25 0000002A 6660                    	pushad
+    26 0000002C 66BB00000000            	mov ebx,0			;clear ebx
+    27 00000032 66BA50414D53            	mov edx,0x534D4150	;magic number
+    28                                  detect_entry:
+    29 00000038 66B820E80000            	mov eax,0xE820
+    30 0000003E 66B918000000            	mov ecx,24
+    31 00000044 CD15                    	int 0x15
+    32 00000046 8006[3D01]01            	add byte [entry_count],1
+    33 0000004B 6683FB00                	cmp ebx,0
+    34 0000004F 7405                    	je detect_end
+    35 00000051 83C718                  	add di,24
+    36 00000054 EBE2                    	jmp detect_entry
+    37                                  detect_end:
+    38 00000056 6661                    	popad
+    39 00000058 C3                      	ret
+    40                                  
+    41                                  print_memory_map:
+    42 00000059 60                      	pusha
+    43 0000005A 06                      	push es
+    44 0000005B A1[3D01]                	mov ax,[entry_count]
+    45 0000005E B118                    	mov cl,24
+    46 00000060 F6E1                    	mul cl
+    47 00000062 89C1                    	mov cx,ax
+    48 00000064 B80050                  	mov ax,0x5000
+    49 00000067 8EC0                    	mov es,ax
+    50 00000069 BF0000                  	mov di,0
+    51 0000006C BE0000                  	mov si,0
+    52                                  repeat:
+    53 0000006F 83F900                  	cmp cx,0
+    54 00000072 7440                    	je over
+    55 00000074 268A05                  	mov al,[es:di]
+    56 00000077 E83D00                  	call print_byte
+    57 0000007A 49                      	dec cx
+    58 0000007B 47                      	inc di
+    59 0000007C 89F8                    	mov ax,di
+    60 0000007E B208                    	mov dl,8
+    61 00000080 F6F2                    	div dl
+    62 00000082 80FC00                  	cmp ah,0
+    63 00000085 7402                    	je next_variable
+    64 00000087 EBE6                    	jmp repeat
+    65                                  next_variable:
+    66 00000089 46                      	inc si
+    67 0000008A 83FE03                  	cmp si,3
+    68 0000008D 741A                    	je next_entry
+    69 0000008F B82D4E                  	mov ax,0x4e2D
+    70 00000092 57                      	push di
+    71 00000093 06                      	push es
+    72 00000094 832E[3E01]02            	sub word [screen_index],2
+    73 00000099 BB00B8                  	mov bx,0xb800
+    74 0000009C 8EC3                    	mov es,bx
+    75 0000009E 8B3E[3E01]              	mov di,[screen_index]
+    76 000000A2 268905                  	mov [es:di],ax
+    77 000000A5 07                      	pop es
+    78 000000A6 5F                      	pop di
+    79 000000A7 EBC6                    	jmp repeat
+    80                                  next_entry:
+    81 000000A9 BE0000                  	mov si,0
+    82 000000AC 8106[3E01]0401          	add word [screen_index],260
+    83 000000B2 EBBB                    	jmp repeat
+    84                                  over:
+    85 000000B4 07                      	pop es
+    86 000000B5 61                      	popa
+    87 000000B6 C3                      	ret
+    88                                  	
+    89                                  
+    90                                  
+    91                                  
+    92                                  print_byte: ;print al
+    93 000000B7 6660                    	pushad
+    94 000000B9 06                      	push es
+    95 000000BA BB00B8                  	mov bx,0xb800
+    96 000000BD 8EC3                    	mov es,bx
+    97 000000BF 832E[3E01]04            	sub word [screen_index],4
+    98 000000C4 8B3E[3E01]              	mov di,[screen_index]
+    99 000000C8 88C3                    	mov bl,al
+   100 000000CA 240F                    	and al,0x0F
+   101 000000CC E81F00                  	call add_ascii_offset
+   102 000000CF B54E                    	mov ch,0x4e
+   103 000000D1 88C1                    	mov cl,al
+   104 000000D3 66C1E110                	shl ecx,16
+   105 000000D7 88D8                    	mov al,bl
+   106 000000D9 C0E804                  	shr al,4
+   107 000000DC E80F00                  	call add_ascii_offset
+   108 000000DF B54E                    	mov ch,0x4e
+   109 000000E1 88C1                    	mov cl,al
+   110 000000E3 6689C8                  	mov eax,ecx
+   111                                  print:
+   112 000000E6 26668905                	mov [es:di],eax
+   113                                  print_end:
+   114 000000EA 07                      	pop es
+   115 000000EB 6661                    	popad
+   116 000000ED C3                      	ret
+   117                                  
+   118                                  add_ascii_offset:
+   119 000000EE 3C09                    	cmp al,9
+   120 000000F0 7F03                    	jg letter
+   121                                  numeric:
+   122 000000F2 0430                    	add al,48
+   123 000000F4 C3                      	ret
+   124                                  letter:
+   125 000000F5 0437                    	add al,55
+   126 000000F7 C3                      	ret
+   127                                  
+   128                                  ;prints string in [ds:si] to screen	
+   129                                  printStr:
+   130 000000F8 60                      	pusha;
+   131 000000F9 57                      	push di
+   132 000000FA 06                      	push es
+   133 000000FB FC                      	cld;inc si after lodsb
+   134                                  loadchr:
+   135 000000FC AC                      	lodsb;
+   136 000000FD 3C00                    	cmp al,0x00;
+   137 000000FF 7434                    	je printStrFinish;
+   138 00000101 3C0A                    	cmp al,0x0A;
+   139 00000103 7415                    	je newline;
+   140 00000105 B44E                    	mov ah,0x4e;
+   141 00000107 8B3E[3B01]              	mov di,[video_memory_index];
+   142 0000010B 8E06[3901]              	mov es,[video_memory_base];
+   143 0000010F 268905                  	mov [es:di],ax;
+   144 00000112 47                      	inc di;
+   145 00000113 47                      	inc di;
+   146 00000114 893E[3B01]              	mov [video_memory_index],di;
+   147 00000118 EBE2                    	jmp loadchr;
+   148                                  newline:
+   149 0000011A 52                      	push dx;
+   150 0000011B 53                      	push bx;
+   151 0000011C 50                      	push ax;
+   152 0000011D BBA000                  	mov bx,0x00A0;
+   153 00000120 011E[3B01]              	add [video_memory_index],bx;
+   154 00000124 BA0000                  	mov dx,0;
+   155 00000127 A1[3B01]                	mov ax,[video_memory_index];
+   156 0000012A F7F3                    	div bx;
+   157 0000012C 2916[3B01]              	sub [video_memory_index],dx;
+   158 00000130 58                      	pop ax;
+   159 00000131 5B                      	pop bx;
+   160 00000132 5A                      	pop dx;
+   161 00000133 EBC7                    	jmp loadchr;
+   162                                  printStrFinish:
+   163 00000135 07                      	pop es
+   164 00000136 5F                      	pop di
+   165 00000137 61                      	popa;
+   166 00000138 C3                      	ret;
+   167                                  
+   168 00000139 00B8                    video_memory_base dw 0xb800
+   169 0000013B 0000                    video_memory_index dw 0x0000
+   170 0000013D 00                      entry_count db 0x00
+   171 0000013E 0401                    screen_index dw 260
+   172 00000140 202020202020547970-     bar_string db '      Type            Length            Base      ', 0x00
+   173 00000149 652020202020202020-
+   174 00000152 202020204C656E6774-
+   175 0000015B 682020202020202020-
+   176 00000164 202020204261736520-
+   177 0000016D 202020202000       
+   178 00000173 00<rept>                times 510-($-$$) db 0x00
+   179 000001FE 55                      db 0x55
+   180 000001FF AA                      db 0xAA
